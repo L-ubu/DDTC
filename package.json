@@ -4,7 +4,8 @@
   "description": "CLI tool for converting Figma designs to code with Cursor integration",
   "main": "dist/cli/index.js",
   "bin": {
-    "dynamate-design-to-code": "./dist/cli/index.js"
+    "dynamate-design-to-code": "./dist/cli/index.js",
+    "ddtc": "./dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc",

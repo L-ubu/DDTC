@@ -17,16 +17,26 @@ A tool for converting Figma designs to production-ready code with Cursor integra
 npm install -g dynamate-design-to-code
 ```
 
+The tool can be invoked using either the full command `dynamate-design-to-code` or the shorter alias `ddtc`:
+
+```bash
+# Using the full command
+dynamate-design-to-code init
+
+# Using the shorter alias
+ddtc init
+```
+
 ## Usage
 
 ### Basic Usage
 
 ```bash
 # Initialize a new project
-dynamate-design-to-code init
+ddtc init
 
 # Generate code from a Figma file
-dynamate-design-to-code generate --figma-file <file-id>
+ddtc generate --figma-file <file-id>
 ```
 
 ### Figma Design-to-Code Workflow
