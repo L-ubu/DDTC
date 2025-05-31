@@ -1,0 +1,20 @@
+{
+  "name": "dynamate-design-to-code",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "commander": "^14.0.0",
+    "figma-js": "^1.16.1-0",
+    "inquirer": "^12.6.3"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.8"
+  }
+}
