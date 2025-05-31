@@ -23,41 +23,58 @@ describe('CodeGenerator', () => {
       {
         message: {
           content: `
-            import React from 'react';
-            import './TestComponent.css';
+\`\`\`tsx
+import React from 'react';
+import './TestComponent.css';
 
-            export const TestComponent = () => {
-              return <div>Test Component</div>;
-            };
-          `
+export const TestComponent = () => {
+  return <div>Test Component</div>;
+};
+\`\`\`
+
+\`\`\`css
+.test-component {
+  padding: 1rem;
+}
+\`\`\`
+`
         }
       }
     ]
   };
 
   beforeEach(() => {
+    jest.clearAllMocks();
+    const mockCreate = jest.fn().mockResolvedValue(mockResponse);
+    (OpenAI as jest.MockedClass<typeof OpenAI>).prototype.chat = {
+      completions: {
+        create: mockCreate
+      }
+    } as any;
     generator = new CodeGenerator(mockConfig);
   });
 
   describe('generateComponent', () => {
     it('should generate code for a component', async () => {
-      // Mock the OpenAI chat completion
-      (OpenAI as jest.MockedClass<typeof OpenAI>).prototype.chat.completions.create = 
-        jest.fn().mockResolvedValue(mockResponse);
-
       const result = await generator.generateComponent(mockComponent);
 
       expect(result).toBeDefined();
       expect(result.code).toContain('import React');
       expect(result.code).toContain('TestComponent');
+      expect((OpenAI as jest.MockedClass<typeof OpenAI>).prototype.chat.completions.create).toHaveBeenCalled();
     });
 
     it('should handle errors during code generation', async () => {
       // Mock API error
-      (OpenAI as jest.MockedClass<typeof OpenAI>).prototype.chat.completions.create = 
-        jest.fn().mockRejectedValue(new Error('API Error'));
+      const mockCreate = jest.fn().mockRejectedValue(new Error('API Error'));
+      (OpenAI as jest.MockedClass<typeof OpenAI>).prototype.chat = {
+        completions: {
+          create: mockCreate
+        }
+      } as any;
 
       await expect(generator.generateComponent(mockComponent)).rejects.toThrow('API Error');
+      expect(mockCreate).toHaveBeenCalled();
     });
   });
 

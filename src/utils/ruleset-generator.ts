@@ -79,7 +79,8 @@ export async function generateRuleset(config: RulesetConfig): Promise<GeneratedR
   }
 
   // Generate example component
-  examples['ExampleComponent.tsx'] = generateExampleComponent(config);
+  const exampleCode = generateExampleComponent(config);
+  examples['ExampleComponent.tsx'] = exampleCode || '';
 
   return {
     name: `${config.projectName}-ruleset`,

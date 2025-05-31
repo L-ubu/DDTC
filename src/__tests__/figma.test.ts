@@ -1,5 +1,13 @@
 import { FigmaService, FigmaConfig, ComponentNode } from '../core/figma';
 
+// Mock figma-js module
+jest.mock('figma-js', () => ({
+  Client: jest.fn().mockImplementation(() => ({
+    file: jest.fn(),
+    fileStyles: jest.fn()
+  }))
+}));
+
 describe('FigmaService', () => {
   let figmaService: FigmaService;
   const mockConfig: FigmaConfig = {
@@ -15,29 +23,31 @@ describe('FigmaService', () => {
     it('should fetch and parse components from a Figma file', async () => {
       // Mock the Figma API response
       const mockResponse = {
-        document: {
-          id: 'root',
-          name: 'Document',
-          type: 'DOCUMENT',
-          children: [
-            {
-              id: 'component-1',
-              name: 'Button',
-              type: 'COMPONENT',
-              children: []
-            },
-            {
-              id: 'component-2',
-              name: 'Card',
-              type: 'COMPONENT_SET',
-              children: []
-            }
-          ]
+        data: {
+          document: {
+            id: 'root',
+            name: 'Document',
+            type: 'DOCUMENT',
+            children: [
+              {
+                id: 'component-1',
+                name: 'Button',
+                type: 'COMPONENT',
+                children: []
+              },
+              {
+                id: 'component-2',
+                name: 'Card',
+                type: 'COMPONENT_SET',
+                children: []
+              }
+            ]
+          }
         }
       };
 
       // Mock the client.file method
-      jest.spyOn(figmaService['client'], 'file').mockResolvedValue(mockResponse as any);
+      jest.spyOn(figmaService['client'], 'file').mockResolvedValue(mockResponse);
 
       const components = await figmaService.getFileComponents('test-file-id');
 
@@ -65,27 +75,29 @@ describe('FigmaService', () => {
   describe('getComponentStyles', () => {
     it('should fetch styles for a component', async () => {
       const mockStyles = {
-        nodes: {
-          'component-1': {
-            styles: {
-              fill: '#000000',
-              stroke: '#ffffff'
+        data: {
+          nodes: {
+            'component-1': {
+              styles: {
+                fill: '#000000',
+                stroke: '#ffffff'
+              }
             }
           }
         }
       };
 
-      // Mock the client.fileNodes method
-      jest.spyOn(figmaService['client'], 'fileNodes').mockResolvedValue(mockStyles as any);
+      // Mock the client.fileStyles method
+      jest.spyOn(figmaService['client'], 'fileStyles').mockResolvedValue(mockStyles);
 
       const styles = await figmaService.getComponentStyles('component-1');
 
-      expect(styles).toEqual(mockStyles);
+      expect(styles).toEqual(mockStyles.data);
     });
 
     it('should handle errors when fetching styles', async () => {
       // Mock an error response
-      jest.spyOn(figmaService['client'], 'fileNodes').mockRejectedValue(new Error('API Error'));
+      jest.spyOn(figmaService['client'], 'fileStyles').mockRejectedValue(new Error('API Error'));
 
       await expect(figmaService.getComponentStyles('component-1')).rejects.toThrow('Failed to fetch component styles');
     });

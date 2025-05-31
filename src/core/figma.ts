@@ -19,15 +19,15 @@ export class FigmaService {
   private client: Figma.ClientInterface;
 
   constructor(config: FigmaConfig) {
-    this.client = Figma.Client({
+    this.client = new Figma.Client({
       accessToken: config.accessToken
     });
   }
 
   async getFileComponents(fileId: string): Promise<ComponentNode[]> {
     try {
-      const file = await this.client.file(fileId);
-      return this.extractComponents(file.data.document);
+      const response = await this.client.file(fileId);
+      return this.extractComponents(response.data.document);
     } catch (error) {
       throw new Error(`Failed to fetch Figma components: ${error}`);
     }
@@ -55,8 +55,8 @@ export class FigmaService {
 
   async getComponentStyles(componentId: string) {
     try {
-      const styles = await this.client.fileStyles(componentId);
-      return styles.data;
+      const response = await this.client.fileStyles(componentId);
+      return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch component styles: ${error}`);
     }

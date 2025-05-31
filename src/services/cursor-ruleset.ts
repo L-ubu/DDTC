@@ -1,12 +1,15 @@
-import { GeneratedRuleset } from '../utils/ruleset-generator';
-import { formatPath, ensureDir } from '../utils';
 import fs from 'fs/promises';
 import path from 'path';
+import { GeneratedRuleset } from '../utils/ruleset-generator';
 
 export interface CursorRulesetConfig {
   ruleset: GeneratedRuleset;
   projectRoot: string;
   cursorConfigPath?: string;
+}
+
+interface CursorConfig {
+  rulesets: string[];
 }
 
 /**
@@ -18,24 +21,30 @@ export class CursorRulesetService {
 
   constructor({ ruleset, projectRoot, cursorConfigPath }: CursorRulesetConfig) {
     this.projectRoot = projectRoot;
-    this.configPath = cursorConfigPath || path.join(projectRoot, '.cursor', 'rules');
+    this.configPath = cursorConfigPath || path.join(projectRoot, '.cursor', 'config.json');
   }
 
   /**
    * Applies a ruleset to the Cursor configuration
    */
   async applyRuleset(ruleset: GeneratedRuleset): Promise<void> {
-    // Ensure the Cursor config directory exists
-    await ensureDir(this.configPath);
+    const rulesetDir = path.join(this.projectRoot, '.cursor/rules', ruleset.name);
+    const examplesDir = path.join(rulesetDir, 'examples');
 
-    // Write the ruleset file
-    const rulesetPath = path.join(this.configPath, `${ruleset.name}.json`);
-    await fs.writeFile(rulesetPath, JSON.stringify(ruleset, null, 2));
+    // Create directories
+    await fs.mkdir(rulesetDir, { recursive: true });
+    await fs.mkdir(examplesDir, { recursive: true });
+
+    // Save ruleset configuration
+    await fs.writeFile(
+      path.join(rulesetDir, 'ruleset.json'),
+      JSON.stringify(ruleset, null, 2)
+    );
 
     // Generate example files
     await this.generateExamples(ruleset);
 
-    // Update Cursor config to include the new ruleset
+    // Update Cursor config
     await this.updateCursorConfig(ruleset.name);
   }
 
@@ -43,12 +52,12 @@ export class CursorRulesetService {
    * Generates example files based on the ruleset
    */
   private async generateExamples(ruleset: GeneratedRuleset): Promise<void> {
-    const examplesDir = path.join(this.projectRoot, '.cursor', 'examples');
-    await ensureDir(examplesDir);
-
-    for (const [name, content] of Object.entries(ruleset.examples)) {
-      const filePath = path.join(examplesDir, `${name}-example.tsx`);
-      await fs.writeFile(filePath, content);
+    const examplesDir = path.join(this.projectRoot, '.cursor/rules', ruleset.name, 'examples');
+    
+    for (const [filename, content] of Object.entries(ruleset.examples)) {
+      if (content) {
+        await fs.writeFile(path.join(examplesDir, filename), content);
+      }
     }
   }
 
@@ -56,36 +65,40 @@ export class CursorRulesetService {
    * Updates the main Cursor configuration to include the new ruleset
    */
   private async updateCursorConfig(rulesetName: string): Promise<void> {
-    const cursorConfigPath = path.join(this.projectRoot, '.cursor', 'config.json');
-    let config: any = {};
-
     try {
-      const existingConfig = await fs.readFile(cursorConfigPath, 'utf-8');
-      config = JSON.parse(existingConfig);
+      let config: CursorConfig = { rulesets: [] };
+
+      try {
+        const configContent = await fs.readFile(this.configPath, 'utf-8');
+        config = JSON.parse(configContent);
+      } catch (error) {
+        // Config doesn't exist yet, use default
+      }
+
+      if (!config.rulesets.includes(rulesetName)) {
+        config.rulesets.push(rulesetName);
+      }
+
+      await fs.mkdir(path.dirname(this.configPath), { recursive: true });
+      await fs.writeFile(this.configPath, JSON.stringify(config, null, 2));
     } catch (error) {
-      // Config doesn't exist yet, create new one
+      throw new Error(`Failed to update Cursor config: ${error}`);
     }
-
-    // Add or update rulesets section
-    config.rulesets = config.rulesets || [];
-    if (!config.rulesets.includes(rulesetName)) {
-      config.rulesets.push(rulesetName);
-    }
-
-    await fs.writeFile(cursorConfigPath, JSON.stringify(config, null, 2));
   }
 
   /**
    * Removes a ruleset from Cursor configuration
    */
   async removeRuleset(rulesetName: string): Promise<void> {
-    const rulesetPath = path.join(this.configPath, `${rulesetName}.json`);
+    const rulesetDir = path.join(this.projectRoot, '.cursor/rules', rulesetName);
     
     try {
-      await fs.unlink(rulesetPath);
+      await fs.rm(rulesetDir, { recursive: true, force: true });
       await this.removeFromConfig(rulesetName);
     } catch (error) {
-      console.error(`Failed to remove ruleset ${rulesetName}:`, error);
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
     }
   }
 
@@ -93,18 +106,15 @@ export class CursorRulesetService {
    * Removes a ruleset from the Cursor config file
    */
   private async removeFromConfig(rulesetName: string): Promise<void> {
-    const cursorConfigPath = path.join(this.projectRoot, '.cursor', 'config.json');
-    
     try {
-      const existingConfig = await fs.readFile(cursorConfigPath, 'utf-8');
-      const config = JSON.parse(existingConfig);
-      
-      if (config.rulesets) {
-        config.rulesets = config.rulesets.filter((name: string) => name !== rulesetName);
-        await fs.writeFile(cursorConfigPath, JSON.stringify(config, null, 2));
-      }
+      const configContent = await fs.readFile(this.configPath, 'utf-8');
+      const config: CursorConfig = JSON.parse(configContent);
+
+      config.rulesets = config.rulesets.filter(name => name !== rulesetName);
+
+      await fs.writeFile(this.configPath, JSON.stringify(config, null, 2));
     } catch (error) {
-      console.error('Failed to update Cursor config:', error);
+      // If config doesn't exist, nothing to remove
     }
   }
 } 

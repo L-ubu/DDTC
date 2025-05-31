@@ -49,16 +49,17 @@ describe('Ruleset Generator', () => {
   it('should generate valid examples', async () => {
     const ruleset = await generateRuleset(mockConfig);
     
-    expect(ruleset.examples).toHaveProperty('ExampleComponent.tsx');
+    expect(Object.keys(ruleset.examples)).toContain('ExampleComponent.tsx');
     expect(ruleset.examples['ExampleComponent.tsx']).toContain('import React');
   });
 });
 
 describe('CursorRulesetService', () => {
-  const testDir = path.join(process.cwd(), '.cursor/rules/test');
+  const testDir = path.join(process.cwd(), '.cursor/rules/test-project-ruleset');
   const examplesDir = path.join(testDir, 'examples');
 
   beforeEach(async () => {
+    await fs.rm(testDir, { recursive: true, force: true });
     await fs.mkdir(testDir, { recursive: true });
     await fs.mkdir(examplesDir, { recursive: true });
   });
