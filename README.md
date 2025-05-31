@@ -29,6 +29,114 @@ dynamate-design-to-code init
 dynamate-design-to-code generate --figma-file <file-id>
 ```
 
+### Figma Design-to-Code Workflow
+
+The tool provides a seamless workflow for converting Figma designs into production-ready code:
+
+1. **Design Import**
+   - Connect to your Figma files using an API key
+   - Import component structures and styles
+   - Maintain design hierarchy and relationships
+
+2. **Component Recognition**
+   - Automatic detection of reusable components
+   - Extraction of styles, properties, and variants
+   - Support for nested component structures
+
+3. **Code Generation**
+   - Generate semantic HTML structure
+   - Create styled components with proper CSS/Tailwind classes
+   - Implement responsive design patterns
+   - Add TypeScript types and props interfaces
+   - Include accessibility attributes
+
+4. **Style Processing**
+   - Extract design tokens (colors, typography, spacing)
+   - Generate consistent styling code
+   - Support for various styling solutions:
+     - Tailwind CSS utility classes
+     - CSS Modules with scoped styles
+     - Styled Components with theme support
+
+#### Example: Converting a Figma Component
+
+Given a Figma component like a Button:
+
+```typescript
+// Input: Figma Button Component
+{
+  id: 'button-primary',
+  name: 'Button/Primary',
+  type: 'COMPONENT',
+  styles: {
+    fill: '#3B82F6',
+    typography: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      fontWeight: 500
+    }
+  }
+}
+
+// Output: React Component
+import React from 'react';
+import './Button.css';
+
+interface ButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: 'primary' | 'secondary';
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  onClick,
+  variant = 'primary'
+}) => {
+  return (
+    <button
+      className={`button button--${variant}`}
+      onClick={onClick}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+};
+```
+
+### Configuration
+
+#### Figma API Setup
+
+1. Get your Figma API key from your Figma account settings
+2. Configure the tool with your API key:
+   ```bash
+   dynamate-design-to-code config set --figma-token <your-api-key>
+   ```
+
+#### Component Generation Settings
+
+You can customize the code generation process through a configuration file:
+
+```json
+{
+  "framework": "react",
+  "styling": "tailwind",
+  "typescript": true,
+  "componentStructure": "atomic",
+  "figma": {
+    "componentPrefix": "Fig",
+    "styleTokens": true,
+    "responsiveBreakpoints": {
+      "sm": "640px",
+      "md": "768px",
+      "lg": "1024px"
+    }
+  }
+}
+```
+
 ### Working with Rulesets
 
 Rulesets help maintain consistency in your codebase by defining project-specific rules and conventions.
