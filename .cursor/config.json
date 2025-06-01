@@ -1,3 +1,6 @@
 {
-  "rulesets": []
+  "rulesets": [
+    "portfolio-ruleset",
+    "test-ruleset"
+  ]
 }

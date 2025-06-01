@@ -5,25 +5,48 @@ export interface GeneratorConfig {
   openaiApiKey: string;
   model?: string;
   temperature?: number;
+  framework?: 'react' | 'vue' | 'svelte' | 'solid' | 'angular';
+  styling?: 'css' | 'tailwind' | 'css-modules' | 'styled-components';
+  features?: {
+    typescript?: boolean;
+    storybook?: boolean;
+    tests?: boolean;
+    accessibility?: boolean;
+  };
 }
 
 export interface GeneratedComponent {
   code: string;
   styles: string;
   dependencies: string[];
+  types?: string;
+  stories?: string;
+  tests?: string;
+  documentation?: string;
 }
 
 export class CodeGenerator {
   private openai: OpenAI;
   private model: string;
   private temperature: number;
+  private framework: string;
+  private styling: string;
+  private features: Required<GeneratorConfig>['features'];
 
   constructor(config: GeneratorConfig) {
     this.openai = new OpenAI({
       apiKey: config.openaiApiKey
     });
-    this.model = config.model || 'gpt-3.5-turbo';
+    this.model = config.model || 'gpt-4';
     this.temperature = config.temperature || 0.7;
+    this.framework = config.framework || 'react';
+    this.styling = config.styling || 'tailwind';
+    this.features = {
+      typescript: config.features?.typescript ?? true,
+      storybook: config.features?.storybook ?? false,
+      tests: config.features?.tests ?? false,
+      accessibility: config.features?.accessibility ?? true
+    };
   }
 
   async generateComponent(component: ComponentNode): Promise<GeneratedComponent> {
@@ -34,7 +57,7 @@ export class CodeGenerator {
         messages: [
           {
             role: 'system',
-            content: 'You are a professional front-end developer. Generate clean, semantic React components with TypeScript and modern best practices.'
+            content: this.getSystemPrompt()
           },
           {
             role: 'user',
@@ -51,39 +74,78 @@ export class CodeGenerator {
     }
   }
 
+  private getSystemPrompt(): string {
+    return `You are a professional front-end developer. Generate clean, semantic ${this.framework} components with ${this.features.typescript ? 'TypeScript' : 'JavaScript'} and modern best practices.
+Focus on:
+- Semantic HTML and accessibility
+- Clean, maintainable code structure
+- ${this.styling === 'tailwind' ? 'Efficient Tailwind utilities' : 'Clean, modular styles'}
+- Proper component organization
+- Type safety and documentation
+- Responsive design patterns`;
+  }
+
   private buildPrompt(component: ComponentNode): string {
-    return `Generate a React component for the following Figma component:
+    const features = [];
+    if (this.features.typescript) features.push('TypeScript types/interfaces');
+    if (this.features.storybook) features.push('Storybook stories');
+    if (this.features.tests) features.push('Unit tests');
+    if (this.features.accessibility) features.push('Accessibility features (ARIA attributes, keyboard navigation)');
+
+    return `Generate a ${this.framework} component for the following Figma component:
 Name: ${component.name}
 Type: ${component.type}
+Structure: ${JSON.stringify(component, null, 2)}
 
 Please include:
-1. TypeScript types/interfaces
-2. Proper component structure
-3. CSS styles (if needed)
-4. Any necessary imports
+${features.map(f => `- ${f}`).join('\n')}
+- Proper component structure
+- ${this.styling === 'tailwind' ? 'Tailwind CSS classes' : 'CSS styles'}
+- Any necessary imports
+- Component documentation
+- Props validation
+- Error boundaries
+- Loading states
+- Interactive states (hover, focus, active)
 
-Return the code in markdown code blocks (tsx for component, css for styles).`;
+Return the code in markdown code blocks:
+- Component: \`\`\`${this.features.typescript ? 'tsx' : 'jsx'}\`\`\`
+- Styles: \`\`\`${this.styling}\`\`\`
+${this.features.storybook ? '- Stories: \`\`\`tsx\`\`\`' : ''}
+${this.features.tests ? '- Tests: \`\`\`tsx\`\`\`' : ''}
+- Types: \`\`\`typescript\`\`\`
+- Documentation: \`\`\`markdown\`\`\``;
   }
 
   private parseGeneratedCode(rawCode: string): GeneratedComponent {
     const result: GeneratedComponent = {
       code: '',
       styles: '',
-      dependencies: []
+      dependencies: [],
+      types: '',
+      stories: '',
+      tests: '',
+      documentation: ''
     };
 
-    // Extract code blocks
-    const tsxMatch = rawCode.match(/```tsx?\n([\s\S]*?)```/);
-    const cssMatch = rawCode.match(/```css\n([\s\S]*?)```/);
+    // Extract code blocks using consistent language identifiers
+    const codeMatch = rawCode.match(/```(?:tsx?|jsx)\n([\s\S]*?)```/);
+    const stylesMatch = rawCode.match(/```(?:css|tailwind|scss|styled-components)\n([\s\S]*?)```/);
+    const storiesMatch = rawCode.match(/```tsx\n([\s\S]*?)```/);
+    const testsMatch = rawCode.match(/```tsx\n([\s\S]*?)```/);
+    const typesMatch = rawCode.match(/```typescript\n([\s\S]*?)```/);
+    const docsMatch = rawCode.match(/```markdown\n([\s\S]*?)```/);
 
-    if (tsxMatch) {
-      result.code = tsxMatch[1].trim();
+    if (codeMatch) {
+      result.code = codeMatch[1].trim();
       result.dependencies = this.extractDependencies(result.code);
     }
 
-    if (cssMatch) {
-      result.styles = cssMatch[1].trim();
-    }
+    if (stylesMatch) result.styles = stylesMatch[1].trim();
+    if (storiesMatch) result.stories = storiesMatch[1].trim();
+    if (testsMatch) result.tests = testsMatch[1].trim();
+    if (typesMatch) result.types = typesMatch[1].trim();
+    if (docsMatch) result.documentation = docsMatch[1].trim();
 
     return result;
   }

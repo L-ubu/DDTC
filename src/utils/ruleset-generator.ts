@@ -1,4 +1,6 @@
-import { extractDependencies } from './index';
+import { promises as fs } from 'fs';
+import path from 'path';
+import glob from 'glob-promise';
 
 export interface RulesetConfig {
   projectName: string;
@@ -8,6 +10,7 @@ export interface RulesetConfig {
   customStyling?: string;
   componentStructure: 'atomic' | 'feature-based' | 'flat' | 'custom';
   customStructure?: string;
+  projectRoot: string;
   conventions: {
     naming?: {
       components?: boolean;
@@ -41,49 +44,71 @@ interface Rule {
   category: 'naming' | 'structure' | 'documentation' | 'styling';
 }
 
+interface ProjectAnalysis {
+  componentPatterns: {
+    naming: string[];
+    structure: string[];
+    imports: string[];
+    exports: string[];
+  };
+  stylePatterns: {
+    naming: string[];
+    structure: string[];
+  };
+  documentationPatterns: {
+    jsdoc: string[];
+    examples: string[];
+  };
+}
+
 /**
  * Generates a project-specific ruleset based on configuration
  */
 export async function generateRuleset(config: RulesetConfig): Promise<GeneratedRuleset> {
+  // Analyze existing project code
+  const analysis = await analyzeProject(config.projectRoot);
+  
   const rules: Rule[] = [];
   const examples: { [key: string]: string } = {};
 
-  // Add framework-specific rules
-  if (config.framework === 'react') {
+  // Generate naming convention rules based on analysis
+  if (config.conventions.naming?.components) {
     rules.push({
-      name: 'react-component-naming',
-      description: 'React components must use PascalCase',
-      pattern: '^[A-Z][a-zA-Z0-9]*$',
+      name: 'component-naming',
+      description: 'Component names should follow project conventions',
+      pattern: analysis.componentPatterns.naming[0] || '[A-Z][a-zA-Z]+',
       severity: 'error',
       category: 'naming'
     });
   }
 
-  // Add styling rules
-  if (config.styling === 'tailwind') {
+  // Generate structure rules based on analysis
+  if (config.conventions.structure?.imports) {
     rules.push({
-      name: 'tailwind-class-order',
-      description: 'Tailwind classes should follow recommended ordering',
-      pattern: '^(layout|spacing|sizing|typography|colors|effects).*$',
-      severity: 'warning',
-      category: 'styling'
-    });
-  }
-
-  // Add structure rules
-  if (config.componentStructure === 'atomic') {
-    rules.push({
-      name: 'atomic-structure',
-      description: 'Components should be organized by atomic design principles',
-      pattern: '^(atoms|molecules|organisms|templates|pages)/.*$',
+      name: 'import-structure',
+      description: 'Import statements should follow project conventions',
+      pattern: analysis.componentPatterns.imports[0] || '^import.*from',
       severity: 'warning',
       category: 'structure'
     });
   }
 
-  // Generate example component
-  const exampleCode = generateExampleComponent(config);
-  examples['ExampleComponent.tsx'] = exampleCode || '';
+  // Generate documentation rules based on analysis
+  if (config.conventions.documentation?.jsdoc) {
+    rules.push({
+      name: 'jsdoc-required',
+      description: 'Components should have JSDoc documentation',
+      pattern: analysis.documentationPatterns.jsdoc[0] || '/\\*\\*[\\s\\S]*?\\*/',
+      severity: 'warning',
+      category: 'documentation'
+    });
+  }
+
+  // Add example based on analyzed patterns
+  const exampleComponent = await findBestExampleComponent(config.projectRoot, config.framework);
+  if (exampleComponent) {
+    examples[`${config.framework}-component`] = exampleComponent;
+  }
 
   return {
     name: `${config.projectName}-ruleset`,
@@ -92,223 +117,103 @@ export async function generateRuleset(config: RulesetConfig): Promise<GeneratedR
   };
 }
 
-function generateExampleComponent(config: RulesetConfig): string {
-  // Handle custom framework by using React as default template
-  if (config.framework === 'custom') {
-    return generateReactExample();
-  }
-
-  switch (config.framework) {
-    case 'react':
-    case 'next':
-      return generateReactExample();
-    case 'vue':
-    case 'nuxt':
-      return generateVueExample();
-    case 'svelte':
-      return generateSvelteExample();
-    case 'solid':
-      return generateSolidExample();
-    case 'astro':
-      return generateAstroExample();
-    case 'remix':
-      return generateRemixExample();
-    case 'angular':
-      return generateAngularExample();
-    default:
-      return '';
-  }
-}
-
-function generateReactExample(): string {
-  return `
-import React from 'react';
-interface ExampleComponentProps {
-  title: string;
-  description?: string;
-  onAction: () => void;
-}
-
-/**
- * Example component following project conventions
- */
-export const ExampleComponent: React.FC<ExampleComponentProps> = ({
-  title,
-  description,
-  onAction
-}) => {
-  return (
-    <div className={"flex flex-col p-4 bg-white rounded-lg shadow-md"}>
-      <h2 className={"text-xl font-bold mb-2"}>{title}</h2>
-      {description && (
-        <p className={"text-gray-600 mb-4"}>{description}</p>
-      )}
-      <button
-        onClick={onAction}
-        className={"px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"}
-      >
-        Click me
-      </button>
-    </div>
-  );
-};`;
-}
-
-function generateVueExample(): string {
-  return `
-<template>
-  <div class="example-component">
-    <h2>{{ title }}</h2>
-    <p v-if="description">{{ description }}</p>
-    <button @click="onAction">Click me</button>
-  </div>
-</template>
-
-<script lang="ts">
-export default {
-  name: 'ExampleComponent',
-  props: {
-    title: {
-      type: String,
-      required: true
+async function analyzeProject(projectRoot: string): Promise<ProjectAnalysis> {
+  const analysis: ProjectAnalysis = {
+    componentPatterns: {
+      naming: [],
+      structure: [],
+      imports: [],
+      exports: []
     },
-    description: String,
-  },
-  methods: {
-    onAction() {
-      this.$emit('action');
+    stylePatterns: {
+      naming: [],
+      structure: []
+    },
+    documentationPatterns: {
+      jsdoc: [],
+      examples: []
     }
+  };
+
+  try {
+    // Find all TypeScript/JavaScript files
+    const files = await glob('**/*.{ts,tsx,js,jsx}', {
+      cwd: projectRoot,
+      ignore: ['**/node_modules/**', '**/dist/**', '**/__tests__/**']
+    });
+
+    for (const file of files) {
+      const content = await fs.readFile(path.join(projectRoot, file), 'utf-8');
+      
+      // Analyze component naming patterns
+      const componentNameMatch = content.match(/(?:class|interface|function)\s+([A-Z][a-zA-Z]+)/g);
+      if (componentNameMatch) {
+        analysis.componentPatterns.naming.push(...componentNameMatch);
+      }
+
+      // Analyze import patterns
+      const importMatches = content.match(/import\s+.*\s+from\s+['"][^'"]+['"];?/g);
+      if (importMatches) {
+        analysis.componentPatterns.imports.push(...importMatches);
+      }
+
+      // Analyze JSDoc patterns
+      const jsdocMatches = content.match(/\/\*\*[\s\S]*?\*\//g);
+      if (jsdocMatches) {
+        analysis.documentationPatterns.jsdoc.push(...jsdocMatches);
+      }
+    }
+
+    // Find all style files
+    const styleFiles = await glob('**/*.{css,scss,less,styled.{ts,js}}', {
+      cwd: projectRoot,
+      ignore: ['**/node_modules/**', '**/dist/**']
+    });
+
+    for (const file of styleFiles) {
+      const content = await fs.readFile(path.join(projectRoot, file), 'utf-8');
+      
+      // Analyze style naming patterns
+      const classMatches = content.match(/\.[a-zA-Z][a-zA-Z0-9-_]*/g);
+      if (classMatches) {
+        analysis.stylePatterns.naming.push(...classMatches);
+      }
+    }
+
+  } catch (error) {
+    console.error('Error analyzing project:', error);
   }
-}
-</script>`;
+
+  return analysis;
 }
 
-function generateSvelteExample(): string {
-  return `
-<script lang="ts">
-  export let title: string;
-  export let description: string | undefined = undefined;
-  
-  function handleClick() {
-    dispatch('action');
+async function findBestExampleComponent(projectRoot: string, framework: string): Promise<string | null> {
+  try {
+    // Find component files based on framework
+    const extension = framework === 'react' ? '{tsx,jsx}' : 
+                     framework === 'vue' ? 'vue' :
+                     framework === 'svelte' ? 'svelte' : 'ts';
+    
+    const files = await glob(`**/*.${extension}`, {
+      cwd: projectRoot,
+      ignore: ['**/node_modules/**', '**/dist/**', '**/__tests__/**']
+    });
+
+    // Find the most representative component
+    for (const file of files) {
+      const content = await fs.readFile(path.join(projectRoot, file), 'utf-8');
+      
+      // Look for components with props, state, and documentation
+      if (content.includes('props') && 
+          content.includes('export') && 
+          content.includes('/**')) {
+        return content;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error finding example component:', error);
+    return null;
   }
-</script>
-
-<div class="example-component">
-  <h2>{title}</h2>
-  {#if description}
-    <p>{description}</p>
-  {/if}
-  <button on:click={handleClick}>
-    Click me
-  </button>
-</div>
-
-<style>
-  .example-component {
-    padding: 1rem;
-  }
-</style>`;
-}
-
-function generateSolidExample(): string {
-  return `
-import { Component } from 'solid-js';
-
-interface ExampleComponentProps {
-  title: string;
-  description?: string;
-  onAction: () => void;
-}
-
-export const ExampleComponent: Component<ExampleComponentProps> = (props) => {
-  return (
-    <div class="example-component">
-      <h2>{props.title}</h2>
-      {props.description && <p>{props.description}</p>}
-      <button onClick={props.onAction}>
-        Click me
-      </button>
-    </div>
-  );
-};`;
-}
-
-function generateAstroExample(): string {
-  return `
----
-interface Props {
-  title: string;
-  description?: string;
-}
-
-const { title, description } = Astro.props;
----
-
-<div class="example-component">
-  <h2>{title}</h2>
-  {description && <p>{description}</p>}
-  <button id="action-button">Click me</button>
-</div>
-
-<script>
-  document.getElementById('action-button')?.addEventListener('click', () => {
-    console.log('Button clicked!');
-  });
-</script>
-
-<style>
-  .example-component {
-    padding: 1rem;
-  }
-</style>`;
-}
-
-function generateRemixExample(): string {
-  return `
-import type { ActionFunction } from '@remix-run/node';
-import { Form } from '@remix-run/react';
-
-interface ExampleComponentProps {
-  title: string;
-  description?: string;
-}
-
-export const action: ActionFunction = async ({ request }) => {
-  // Handle form submission
-  return null;
-};
-
-export default function ExampleComponent({ title, description }: ExampleComponentProps) {
-  return (
-    <div className="example-component">
-      <h2>{title}</h2>
-      {description && <p>{description}</p>}
-      <Form method="post">
-        <button type="submit">Click me</button>
-      </Form>
-    </div>
-  );
-}`;
-}
-
-function generateAngularExample(): string {
-  return `
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-
-@Component({
-  selector: 'app-example',
-  template: \`
-    <div class="example-component">
-      <h2>{{ title }}</h2>
-      <p *ngIf="description">{{ description }}</p>
-      <button (click)="onAction.emit()">Click me</button>
-    </div>
-  \`
-})
-export class ExampleComponent {
-  @Input() title!: string;
-  @Input() description?: string;
-  @Output() onAction = new EventEmitter<void>();
-}`;
 } 
