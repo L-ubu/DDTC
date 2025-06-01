@@ -10,11 +10,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/inquirer": "^8.2.6",
     "commander": "^14.0.0",
     "figma-js": "^1.16.1-0",
-    "inquirer": "^12.6.3"
-  },
-  "devDependencies": {
-    "@types/inquirer": "^9.0.8"
+    "inquirer": "^8.2.6"
   }
 }

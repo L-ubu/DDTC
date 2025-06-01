@@ -2,9 +2,12 @@ import { extractDependencies } from './index';
 
 export interface RulesetConfig {
   projectName: string;
-  framework: 'react' | 'vue' | 'angular';
-  styling: 'tailwind' | 'css-modules' | 'styled-components';
-  componentStructure: 'atomic' | 'feature-based' | 'flat';
+  framework: 'react' | 'vue' | 'angular' | 'next' | 'nuxt' | 'svelte' | 'solid' | 'astro' | 'remix' | 'custom';
+  customFramework?: string;
+  styling: 'tailwind' | 'css-modules' | 'styled-components' | 'scss' | 'emotion' | 'stitches' | 'vanilla-extract' | 'custom';
+  customStyling?: string;
+  componentStructure: 'atomic' | 'feature-based' | 'flat' | 'custom';
+  customStructure?: string;
   conventions: {
     naming?: {
       components?: boolean;
@@ -90,9 +93,35 @@ export async function generateRuleset(config: RulesetConfig): Promise<GeneratedR
 }
 
 function generateExampleComponent(config: RulesetConfig): string {
+  // Handle custom framework by using React as default template
+  if (config.framework === 'custom') {
+    return generateReactExample();
+  }
+
   switch (config.framework) {
     case 'react':
-      return `
+    case 'next':
+      return generateReactExample();
+    case 'vue':
+    case 'nuxt':
+      return generateVueExample();
+    case 'svelte':
+      return generateSvelteExample();
+    case 'solid':
+      return generateSolidExample();
+    case 'astro':
+      return generateAstroExample();
+    case 'remix':
+      return generateRemixExample();
+    case 'angular':
+      return generateAngularExample();
+    default:
+      return '';
+  }
+}
+
+function generateReactExample(): string {
+  return `
 import React from 'react';
 interface ExampleComponentProps {
   title: string;
@@ -122,10 +151,11 @@ export const ExampleComponent: React.FC<ExampleComponentProps> = ({
       </button>
     </div>
   );
-};
-`;
-    case 'vue':
-      return `
+};`;
+}
+
+function generateVueExample(): string {
+  return `
 <template>
   <div class="example-component">
     <h2>{{ title }}</h2>
@@ -150,10 +180,120 @@ export default {
     }
   }
 }
+</script>`;
+}
+
+function generateSvelteExample(): string {
+  return `
+<script lang="ts">
+  export let title: string;
+  export let description: string | undefined = undefined;
+  
+  function handleClick() {
+    dispatch('action');
+  }
 </script>
-`;
-    case 'angular':
-      return `
+
+<div class="example-component">
+  <h2>{title}</h2>
+  {#if description}
+    <p>{description}</p>
+  {/if}
+  <button on:click={handleClick}>
+    Click me
+  </button>
+</div>
+
+<style>
+  .example-component {
+    padding: 1rem;
+  }
+</style>`;
+}
+
+function generateSolidExample(): string {
+  return `
+import { Component } from 'solid-js';
+
+interface ExampleComponentProps {
+  title: string;
+  description?: string;
+  onAction: () => void;
+}
+
+export const ExampleComponent: Component<ExampleComponentProps> = (props) => {
+  return (
+    <div class="example-component">
+      <h2>{props.title}</h2>
+      {props.description && <p>{props.description}</p>}
+      <button onClick={props.onAction}>
+        Click me
+      </button>
+    </div>
+  );
+};`;
+}
+
+function generateAstroExample(): string {
+  return `
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<div class="example-component">
+  <h2>{title}</h2>
+  {description && <p>{description}</p>}
+  <button id="action-button">Click me</button>
+</div>
+
+<script>
+  document.getElementById('action-button')?.addEventListener('click', () => {
+    console.log('Button clicked!');
+  });
+</script>
+
+<style>
+  .example-component {
+    padding: 1rem;
+  }
+</style>`;
+}
+
+function generateRemixExample(): string {
+  return `
+import type { ActionFunction } from '@remix-run/node';
+import { Form } from '@remix-run/react';
+
+interface ExampleComponentProps {
+  title: string;
+  description?: string;
+}
+
+export const action: ActionFunction = async ({ request }) => {
+  // Handle form submission
+  return null;
+};
+
+export default function ExampleComponent({ title, description }: ExampleComponentProps) {
+  return (
+    <div className="example-component">
+      <h2>{title}</h2>
+      {description && <p>{description}</p>}
+      <Form method="post">
+        <button type="submit">Click me</button>
+      </Form>
+    </div>
+  );
+}`;
+}
+
+function generateAngularExample(): string {
+  return `
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
@@ -170,9 +310,5 @@ export class ExampleComponent {
   @Input() title!: string;
   @Input() description?: string;
   @Output() onAction = new EventEmitter<void>();
-}
-`;
-    default:
-      return '';
-  }
+}`;
 } 

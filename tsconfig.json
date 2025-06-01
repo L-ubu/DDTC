@@ -13,6 +13,7 @@
     "declaration": true,
     "sourceMap": true,
     "baseUrl": ".",
+    "moduleResolution": "node",
     "paths": {
       "@/*": ["src/*"]
     }
