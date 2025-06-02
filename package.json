@@ -1,6 +1,6 @@
 {
   "name": "dynamate-design-to-code",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "A powerful tool for converting Figma designs into high-quality, production-ready code with built-in best practices and customizable rulesets",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -47,17 +47,19 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "figma-api": "^1.11.0",
-    "commander": "^9.0.0",
-    "inquirer": "^8.0.0",
-    "openai": "^4.0.0",
-    "glob-promise": "^5.0.0",
     "@types/glob": "^8.0.0",
-    "dotenv": "^16.0.0"
+    "commander": "^9.0.0",
+    "dotenv": "^16.0.0",
+    "dynamate-design-to-code": "^1.0.5",
+    "figma-api": "^1.11.0",
+    "glob-promise": "^5.0.0",
+    "inquirer": "^8.0.0",
+    "openai": "^4.0.0"
   },
   "devDependencies": {
-    "@types/node": "^16.0.0",
+    "@types/inquirer": "^9.0.8",
     "@types/jest": "^27.0.0",
+    "@types/node": "^16.0.0",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^8.0.0",

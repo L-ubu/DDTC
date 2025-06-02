@@ -4,10 +4,36 @@ import { generateRuleset } from '../../utils/ruleset-generator';
 import { CursorRulesetService } from '../../services/cursor-ruleset';
 import type { RulesetConfig } from '../../utils/ruleset-generator';
 
+interface ActionAnswers {
+  action: 'create' | 'apply' | 'remove' | 'list';
+}
+
+interface RulesetAnswers {
+  projectName: string;
+  framework: 'react' | 'vue' | 'angular' | 'next' | 'nuxt' | 'svelte' | 'solid' | 'astro';
+  styling: 'tailwind' | 'css-modules' | 'styled-components' | 'scss';
+  componentStructure: 'atomic' | 'feature-based' | 'flat';
+  conventions: Array<
+    | 'components'
+    | 'props'
+    | 'styles'
+    | 'imports'
+    | 'exports'
+    | 'types'
+    | 'jsdoc'
+    | 'readme'
+    | 'examples'
+  >;
+}
+
+interface RulesetSelection {
+  selectedRuleset: string;
+}
+
 export const rulesetCommand = new Command('ruleset')
   .description('Manage code generation rulesets')
   .action(async () => {
-    const { action } = await inquirer.prompt([
+    const { action } = await inquirer.prompt<ActionAnswers>([
       {
         type: 'list',
         name: 'action',
@@ -33,7 +59,7 @@ export const rulesetCommand = new Command('ruleset')
   });
 
 async function createRuleset() {
-  const answers = await inquirer.prompt([
+  const answers = await inquirer.prompt<RulesetAnswers>([
     {
       type: 'input',
       name: 'projectName',
@@ -160,7 +186,7 @@ async function applyRuleset() {
       return;
     }
 
-    const { selectedRuleset } = await inquirer.prompt([
+    const { selectedRuleset } = await inquirer.prompt<RulesetSelection>([
       {
         type: 'list',
         name: 'selectedRuleset',
@@ -194,7 +220,7 @@ async function removeRuleset() {
       return;
     }
 
-    const { selectedRuleset } = await inquirer.prompt([
+    const { selectedRuleset } = await inquirer.prompt<RulesetSelection>([
       {
         type: 'list',
         name: 'selectedRuleset',
