@@ -1,177 +1,59 @@
-# Dynamate Design-to-Code
+# Dynamate Design-to-Code Generator
 
-A tool for converting Figma designs to production-ready code with Cursor integration.
+A powerful tool for converting Figma designs into high-quality, production-ready code with built-in best practices and customizable rulesets.
 
 ## Features
 
-- Figma design import and component recognition
-- Code generation with semantic HTML and modern best practices
-- Cursor integration for AI-powered code generation
-- Project-specific rulesets for consistent code style
-- Support for React, Vue, and Angular
-- Integration with popular styling solutions (Tailwind, CSS Modules, Styled Components)
+- 🎨 **Figma Integration**: Direct integration with Figma through the MCP plugin
+- 🧩 **Smart Component Recognition**: Accurately identifies and maps Figma components to code
+- 🎯 **Framework Agnostic**: Supports React, Vue, Svelte, Angular, and more
+- 🎭 **Multiple Styling Options**: Works with Tailwind, CSS Modules, Styled Components, and others
+- 📏 **Custom Rulesets**: Generate and apply project-specific coding standards
+- ♿ **Accessibility First**: Generates ARIA-compliant, semantic HTML
+- 🔄 **Real-time Preview**: See your components come to life as you export
+- 📚 **Documentation**: Automatic generation of component documentation and examples
+
+## Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+- Figma account
+- OpenAI API key (for AI-powered features)
 
 ## Installation
 
 ```bash
+# Install globally
 npm install -g dynamate-design-to-code
+
+# Or install in your project
+npm install --save-dev dynamate-design-to-code
 ```
 
-The tool can be invoked using either the full command `dynamate-design-to-code` or the shorter alias `ddtc`:
+## Quick Start
 
+1. Initialize the tool in your project:
 ```bash
-# Using the full command
-dynamate-design-to-code init
-
-# Using the shorter alias
-ddtc init
+ddtc start
 ```
 
-## Usage
+2. Follow the interactive setup to configure:
+   - Figma access token
+   - OpenAI API key (optional)
+   - Preferred framework
+   - Styling solution
 
-### Basic Usage
-
+3. Generate code from a Figma section:
 ```bash
-# Initialize a new project
-ddtc init
-
-# Generate code from a Figma file
-ddtc generate --figma-file <file-id>
+ddtc generate "https://www.figma.com/file/...?node-id=..."
 ```
 
-### Figma Design-to-Code Workflow
+## Configuration
 
-The tool provides a seamless workflow for converting Figma designs into production-ready code:
-
-1. **Design Import**
-   - Connect to your Figma files using an API key
-   - Import component structures and styles
-   - Maintain design hierarchy and relationships
-
-2. **Component Recognition**
-   - Automatic detection of reusable components
-   - Extraction of styles, properties, and variants
-   - Support for nested component structures
-
-3. **Code Generation**
-   - Generate semantic HTML structure
-   - Create styled components with proper CSS/Tailwind classes
-   - Implement responsive design patterns
-   - Add TypeScript types and props interfaces
-   - Include accessibility attributes
-
-4. **Style Processing**
-   - Extract design tokens (colors, typography, spacing)
-   - Generate consistent styling code
-   - Support for various styling solutions:
-     - Tailwind CSS utility classes
-     - CSS Modules with scoped styles
-     - Styled Components with theme support
-
-#### Example: Converting a Figma Component
-
-Given a Figma component like a Button:
-
-```typescript
-// Input: Figma Button Component
-{
-  id: 'button-primary',
-  name: 'Button/Primary',
-  type: 'COMPONENT',
-  styles: {
-    fill: '#3B82F6',
-    typography: {
-      fontFamily: 'Inter',
-      fontSize: 16,
-      fontWeight: 500
-    }
-  }
-}
-
-// Output: React Component
-import React from 'react';
-import './Button.css';
-
-interface ButtonProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-  variant?: 'primary' | 'secondary';
-}
-
-export const Button: React.FC<ButtonProps> = ({
-  children,
-  onClick,
-  variant = 'primary'
-}) => {
-  return (
-    <button
-      className={`button button--${variant}`}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-};
-```
-
-### Configuration
-
-#### Figma API Setup
-
-1. Get your Figma API key from your Figma account settings
-2. Configure the tool with your API key:
-   ```bash
-   dynamate-design-to-code config set --figma-token <your-api-key>
-   ```
-
-#### Component Generation Settings
-
-You can customize the code generation process through a configuration file:
+Create a `.ddtcrc.json` file in your project root:
 
 ```json
 {
-  "framework": "react",
-  "styling": "tailwind",
-  "typescript": true,
-  "componentStructure": "atomic",
-  "figma": {
-    "componentPrefix": "Fig",
-    "styleTokens": true,
-    "responsiveBreakpoints": {
-      "sm": "640px",
-      "md": "768px",
-      "lg": "1024px"
-    }
-  }
-}
-```
-
-### Working with Rulesets
-
-Rulesets help maintain consistency in your codebase by defining project-specific rules and conventions.
-
-#### Creating a Ruleset
-
-```bash
-dynamate-design-to-code ruleset create
-```
-
-This will prompt you for:
-- Project name
-- Framework choice (React, Vue, Angular)
-- Styling solution (Tailwind, CSS Modules, Styled Components)
-- Component structure (Atomic, Feature-based, Flat)
-- Conventions to enforce:
-  - Naming conventions (components, props, styles)
-  - Structure conventions (imports, exports, types)
-  - Documentation requirements (JSDoc, README, examples)
-
-#### Example Ruleset Configuration
-
-```json
-{
-  "projectName": "my-app",
   "framework": "react",
   "styling": "tailwind",
   "componentStructure": "atomic",
@@ -195,67 +77,100 @@ This will prompt you for:
 }
 ```
 
-#### Applying a Ruleset
+## Ruleset Management
+
+Create and manage coding standards for your project:
 
 ```bash
-# Apply a ruleset to your project
-dynamate-design-to-code ruleset apply <ruleset-name>
+# Create a new ruleset
+ddtc ruleset
+
+# Apply an existing ruleset
+ddtc ruleset apply <ruleset-name>
 
 # Remove a ruleset
-dynamate-design-to-code ruleset remove <ruleset-name>
+ddtc ruleset remove <ruleset-name>
 ```
 
-#### Generated Files
+## Component Generation
 
-The ruleset generator creates:
-- `.cursor/rules/<ruleset-name>/config.json`: Ruleset configuration
-- `.cursor/rules/<ruleset-name>/examples/`: Example components following the ruleset
-- `.cursor/config.json`: Updated Cursor configuration with ruleset reference
-
-## Development
-
-### Setup
+Generate components with various options:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/dynamate-design-to-code.git
-cd dynamate-design-to-code
+# Basic component generation
+ddtc generate --file <figma-file-id> --output ./components
 
-# Install dependencies
-npm install
+# With specific framework
+ddtc generate --file <figma-file-id> --framework react --output ./components
 
-# Build the project
-npm run build
+# With styling options
+ddtc generate --file <figma-file-id> --styling tailwind --output ./components
+
+# Generate a single component
+ddtc generate --component <component-id> --output ./components
 ```
 
-### Testing
+## Project Structure
 
-```bash
-# Run all tests
-npm test
+The tool creates the following structure in your project:
 
-# Run specific test suite
-npm test -- ruleset.test.ts
-
-# Run tests in watch mode
-npm test -- --watch
+```
+your-project/
+├── .ddtcrc.json
+├── .cursor/
+│   └── rules/
+│       └── your-ruleset/
+│           ├── ruleset.json
+│           └── examples/
+├── components/
+│   └── generated/
+└── styles/
+    └── generated/
 ```
 
-### Contributing
+## Best Practices
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. **Component Organization**
+   - Use atomic design principles
+   - Keep components focused and reusable
+   - Follow consistent naming conventions
+
+2. **Styling**
+   - Use CSS variables for theming
+   - Implement responsive designs
+   - Follow BEM methodology when applicable
+
+3. **Documentation**
+   - Add JSDoc comments
+   - Include usage examples
+   - Document props and types
+
+## Common Issues
+
+1. **Component Recognition**
+   - Ensure Figma components are properly structured
+   - Use consistent naming in Figma
+   - Group related elements appropriately
+
+2. **Style Mapping**
+   - Use Figma styles for colors and typography
+   - Maintain consistent spacing units
+   - Define reusable styles at the root level
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
-## Acknowledgments
+## Support
 
-- Cursor IDE team
-- Figma MCP plugin developers
-- OpenAI team
-- Dynamate development team 
+- Documentation: [https://docs.dynamate.com](https://docs.dynamate.com)
+- Issues: [GitHub Issues](https://github.com/dynamate/design-to-code/issues)
+- Discord: [Join our community](https://discord.gg/dynamate)
+
+## Credits
+
+Developed by Dynamate - Making design-to-code conversion seamless and efficient. 
