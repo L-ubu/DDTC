@@ -11,55 +11,44 @@ export async function writeGeneratedFiles(
   componentName: string
 ): Promise<void> {
   try {
-    // Ensure output directory exists
+    // Create output directory if it doesn't exist
     await mkdir(outputDir, { recursive: true });
     
     // Write component file
-    await writeFile(
-      join(outputDir, `${componentName}.tsx`),
-      generated.code
-    );
+    const componentPath = join(outputDir, `${componentName}.tsx`);
+    await writeFile(componentPath, generated.code);
     
     // Write styles if present
     if (generated.styles) {
-      await writeFile(
-        join(outputDir, `${componentName}.styles.ts`),
-        generated.styles
-      );
+      const stylesPath = join(outputDir, `${componentName}.module.css`);
+      await writeFile(stylesPath, generated.styles);
     }
     
     // Write types if present
     if (generated.types) {
-      await writeFile(
-        join(outputDir, `${componentName}.types.ts`),
-        generated.types
-      );
+      const typesPath = join(outputDir, `${componentName}.d.ts`);
+      await writeFile(typesPath, generated.types);
     }
     
     // Write stories if present
     if (generated.stories) {
-      await writeFile(
-        join(outputDir, `${componentName}.stories.tsx`),
-        generated.stories
-      );
+      const storiesPath = join(outputDir, `${componentName}.stories.tsx`);
+      await writeFile(storiesPath, generated.stories);
     }
     
     // Write tests if present
     if (generated.tests) {
-      await writeFile(
-        join(outputDir, `${componentName}.test.tsx`),
-        generated.tests
-      );
+      const testsPath = join(outputDir, `${componentName}.test.tsx`);
+      await writeFile(testsPath, generated.tests);
     }
     
     // Write documentation if present
     if (generated.documentation) {
-      await writeFile(
-        join(outputDir, `${componentName}.md`),
-        generated.documentation
-      );
+      const docsPath = join(outputDir, `${componentName}.md`);
+      await writeFile(docsPath, generated.documentation);
     }
   } catch (error) {
-    throw new Error(`Failed to write generated files: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Failed to write generated files: ${errorMessage}`);
   }
 } 

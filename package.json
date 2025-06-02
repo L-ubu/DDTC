@@ -1,47 +1,67 @@
 {
   "name": "dynamate-design-to-code",
   "version": "1.0.0",
-  "description": "CLI tool for converting Figma designs to code with Cursor integration",
-  "main": "dist/cli/index.js",
+  "description": "A powerful tool for converting Figma designs into high-quality, production-ready code with built-in best practices and customizable rulesets",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
-    "dynamate-design-to-code": "./dist/cli/index.js",
     "ddtc": "./dist/cli/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc -w",
+    "prepublishOnly": "npm run build",
     "test": "jest",
-    "test:watch": "jest --watch",
-    "lint": "eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts"
+    "lint": "eslint src --ext .ts,.tsx",
+    "clean": "rimraf dist",
+    "prepare": "npm run clean && npm run build"
   },
   "keywords": [
     "figma",
     "design-to-code",
-    "cursor",
-    "cli"
+    "code-generation",
+    "react",
+    "vue",
+    "svelte",
+    "tailwind",
+    "typescript",
+    "ai",
+    "components"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Dynamate",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dynamate/design-to-code"
+  },
+  "bugs": {
+    "url": "https://github.com/dynamate/design-to-code/issues"
+  },
+  "homepage": "https://github.com/dynamate/design-to-code#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "dependencies": {
-    "commander": "^11.0.0",
-    "dotenv": "^16.3.1",
-    "figma-js": "^1.16.0",
-    "inquirer": "^8.2.6",
-    "openai": "^4.20.1",
-    "typescript": "^5.2.2"
+    "@figma/js-api": "^1.0.0",
+    "commander": "^9.0.0",
+    "inquirer": "^8.0.0",
+    "openai": "^4.0.0",
+    "glob-promise": "^5.0.0",
+    "@types/glob": "^8.0.0"
   },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
-    "@types/inquirer": "^8.2.6",
-    "@types/jest": "^29.5.5",
-    "@types/node": "^20.6.2",
-    "@typescript-eslint/eslint-plugin": "^6.7.0",
-    "@typescript-eslint/parser": "^6.7.0",
-    "eslint": "^8.49.0",
-    "glob-promise": "^6.0.7",
-    "jest": "^29.7.0",
-    "prettier": "^3.0.3",
-    "ts-jest": "^29.1.1"
+    "@types/node": "^16.0.0",
+    "@types/jest": "^27.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^27.0.0",
+    "rimraf": "^3.0.2",
+    "ts-jest": "^27.0.0",
+    "typescript": "^4.5.0"
   }
 }

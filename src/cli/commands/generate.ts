@@ -1,58 +1,63 @@
 import { Command } from 'commander';
 import { CodeGenerator, FigmaService } from '../../core';
-import { parseFigmaUrl } from '../../utils';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { parseFigmaUrl, writeGeneratedFiles } from '../../utils';
+import path from 'path';
 
 export const generateCommand = new Command('generate')
-  .description('Generate code from a Figma section link')
-  .argument('<figma-link>', 'Figma section link (copied from Figma)')
-  .option('-o, --output <dir>', 'Output directory', './components')
-  .action(async (figmaLink, options) => {
+  .description('Generate code from Figma components')
+  .argument('[url]', 'Figma component URL')
+  .option('-f, --file <string>', 'Figma file ID')
+  .option('-c, --component <string>', 'Component ID')
+  .option('-o, --output <string>', 'Output directory', './components')
+  .option('--framework <string>', 'Target framework', 'react')
+  .option('--styling <string>', 'Styling solution', 'tailwind')
+  .action(async (url, options) => {
     try {
-      console.log('🔍 Analyzing Figma section...');
-      
-      // Parse Figma URL to extract fileId and nodeId
-      const { fileId, nodeId } = parseFigmaUrl(figmaLink);
-      if (!fileId || !nodeId) {
-        throw new Error('Invalid Figma link. Please copy the link from Figma using "Copy link to section"');
+      let fileId = options.file;
+      let componentId = options.component;
+
+      if (url) {
+        const parsed = parseFigmaUrl(url);
+        fileId = parsed.fileId;
+        componentId = parsed.nodeId;
       }
 
-      // Initialize services
+      if (!fileId) {
+        throw new Error('Please provide either a Figma URL or file ID');
+      }
+
       const figma = new FigmaService({
-        accessToken: process.env.FIGMA_ACCESS_TOKEN || ''
+        accessToken: process.env.FIGMA_ACCESS_TOKEN || '',
+        fileId
       });
 
       const generator = new CodeGenerator({
-        openaiApiKey: process.env.OPENAI_API_KEY,
-        framework: process.env.FRAMEWORK || 'react',
-        styling: process.env.STYLING || 'tailwind'
+        openaiApiKey: process.env.OPENAI_API_KEY || '',
+        framework: options.framework,
+        styling: options.styling
       });
 
-      // Get component from Figma
-      console.log('📥 Fetching component data...');
-      const component = await figma.getComponent(fileId, nodeId);
-      
-      // Generate code
-      console.log('⚙️ Generating code...');
-      const generated = await generator.generateComponent(component);
+      if (componentId) {
+        const component = await figma.getFileComponents(fileId);
+        const generated = await generator.generateComponent(component[0]);
+        const componentName = path.basename(component[0].name);
+        await writeGeneratedFiles(generated, options.output, componentName);
+      } else {
+        const components = await figma.getFileComponents(fileId);
+        for (const component of components) {
+          const generated = await generator.generateComponent(component);
+          const componentName = path.basename(component.name);
+          await writeGeneratedFiles(generated, options.output, componentName);
+        }
+      }
 
-      // Save the generated files
-      const { writeGeneratedFiles } = await import('../../utils/files');
-      await writeGeneratedFiles(generated, options.output);
-
-      console.log('\n✨ Code generation complete!');
-      console.log(`📁 Files written to: ${options.output}`);
-      console.log('\nGenerated files:');
-      console.log(`- Component: ${options.output}/${component.name}.tsx`);
-      if (generated.styles) console.log(`- Styles: ${options.output}/${component.name}.styles.ts`);
-      if (generated.types) console.log(`- Types: ${options.output}/${component.name}.types.ts`);
-      if (generated.stories) console.log(`- Stories: ${options.output}/${component.name}.stories.tsx`);
-      if (generated.tests) console.log(`- Tests: ${options.output}/${component.name}.test.tsx`);
-      
+      console.log('✨ Code generation completed successfully!');
     } catch (error) {
-      console.error('❌ Error:', error.message);
+      if (error instanceof Error) {
+        console.error('❌ Error:', error.message);
+      } else {
+        console.error('❌ An unknown error occurred');
+      }
       process.exit(1);
     }
   }); 
