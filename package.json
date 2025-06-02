@@ -1,6 +1,6 @@
 {
   "name": "dynamate-design-to-code",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "A powerful tool for converting Figma designs into high-quality, production-ready code with built-in best practices and customizable rulesets",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

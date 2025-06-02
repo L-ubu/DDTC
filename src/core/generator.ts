@@ -5,8 +5,10 @@ export interface GeneratorConfig {
   openaiApiKey: string;
   model?: string;
   temperature?: number;
-  framework?: 'react' | 'vue' | 'svelte' | 'solid' | 'angular';
-  styling?: 'css' | 'tailwind' | 'css-modules' | 'styled-components';
+  framework?: 'react' | 'vue' | 'svelte' | 'solid' | 'angular' | 'custom';
+  customFramework?: string;
+  styling?: 'css' | 'tailwind' | 'css-modules' | 'styled-components' | 'custom';
+  customStyling?: string;
   features?: {
     typescript?: boolean;
     storybook?: boolean;
