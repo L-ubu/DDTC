@@ -1,11 +1,11 @@
 {
   "name": "dynamate-design-to-code",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A powerful tool for converting Figma designs into high-quality, production-ready code with built-in best practices and customizable rulesets",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "ddtc": "./dist/cli/index.js"
+    "ddtc": "dist/cli/index.js"
   },
   "files": [
     "dist",
@@ -18,7 +18,8 @@
     "test": "jest",
     "lint": "eslint src --ext .ts,.tsx",
     "clean": "rimraf dist",
-    "prepare": "npm run clean && npm run build"
+    "prepare": "npm run clean && npm run build",
+    "postinstall": "chmod +x dist/cli/index.js"
   },
   "keywords": [
     "figma",
@@ -51,7 +52,8 @@
     "inquirer": "^8.0.0",
     "openai": "^4.0.0",
     "glob-promise": "^5.0.0",
-    "@types/glob": "^8.0.0"
+    "@types/glob": "^8.0.0",
+    "dotenv": "^16.0.0"
   },
   "devDependencies": {
     "@types/node": "^16.0.0",

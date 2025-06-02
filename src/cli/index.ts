@@ -9,8 +9,8 @@ const program = new Command();
 
 program
   .name('ddtc')
-  .description('Dynamate Design-to-Code Generator')
-  .version('1.0.0');
+  .description('Dynamate Design-to-Code Generator CLI')
+  .version('1.0.1');
 
 program.addCommand(startCommand);
 program.addCommand(generateCommand);
