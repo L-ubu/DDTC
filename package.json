@@ -50,7 +50,7 @@
     "@types/glob": "^8.0.0",
     "commander": "^9.0.0",
     "dotenv": "^16.0.0",
-    "dynamate-design-to-code": "^1.0.5",
+    "dynamate-design-to-code": "^1.0.7",
     "figma-api": "^1.11.0",
     "glob-promise": "^5.0.0",
     "inquirer": "^8.0.0",
