@@ -1,4 +1,4 @@
-import * as Figma from 'figma-js';
+import { Api as Figma } from 'figma-api';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -16,20 +16,21 @@ export interface ComponentNode {
 }
 
 export class FigmaService {
-  private client: Figma.ClientInterface;
+  private client: Figma;
 
   constructor(config: FigmaConfig) {
-    this.client = new Figma.Client({
-      accessToken: config.accessToken
+    this.client = new Figma({
+      personalAccessToken: config.accessToken
     });
   }
 
   async getFileComponents(fileId: string): Promise<ComponentNode[]> {
     try {
-      const response = await this.client.file(fileId);
-      return this.extractComponents(response.data.document);
+      const response = await this.client.getFile(fileId);
+      return this.extractComponents(response.document);
     } catch (error) {
-      throw new Error(`Failed to fetch Figma components: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to fetch Figma components: ${errorMessage}`);
     }
   }
 
@@ -40,14 +41,14 @@ export class FigmaService {
       components.push({
         id: node.id,
         name: node.name,
-        type: node.type
+        type: node.type,
       });
     }
 
     if (node.children) {
-      node.children.forEach((child: any) => {
+      for (const child of node.children) {
         components.push(...this.extractComponents(child));
-      });
+      }
     }
 
     return components;
@@ -55,10 +56,15 @@ export class FigmaService {
 
   async getComponentStyles(componentId: string) {
     try {
-      const response = await this.client.fileStyles(componentId);
-      return response.data;
+      const response = await this.client.getFileNodes(componentId, {
+        geometry: 'paths',
+        plugin_data: 'shared',
+        styles: true
+      });
+      return response.nodes[componentId];
     } catch (error) {
-      throw new Error(`Failed to fetch component styles: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to fetch component styles: ${errorMessage}`);
     }
   }
 } 

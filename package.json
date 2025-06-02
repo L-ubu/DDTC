@@ -46,7 +46,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@figma/js-api": "^1.0.0",
+    "figma-api": "^1.11.0",
     "commander": "^9.0.0",
     "inquirer": "^8.0.0",
     "openai": "^4.0.0",
